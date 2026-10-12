@@ -306,3 +306,5 @@ tr[data-selected='true'], tr[data-selected='true']:hover { background: var(--acc
   .results-toolbar { flex-wrap: wrap; }
   .selection-summary { order: 2; width: 100%; }
 }
+
+.simple-filters { padding: 8px; }

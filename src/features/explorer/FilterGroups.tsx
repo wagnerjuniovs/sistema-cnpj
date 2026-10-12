@@ -3,16 +3,26 @@ import { Button } from '@/components/ui/button'
 import { fieldById, operatorLabels, optionLabel } from './catalog'
 import { dateFormat, moneyFormat, type Condition, type FilterGroup } from './model'
 
-function summary(condition: Condition) {
+function summary(condition: Condition, simple = false) {
   const field = fieldById[condition.field]
   if (['present','missing'].includes(condition.operator)) return operatorLabels[condition.operator].toLowerCase()
   const values = condition.values.map(value => field.type === 'number' ? moneyFormat(value) : field.type === 'date' ? dateFormat(value) : optionLabel(field.id, value))
+  if (simple && ['in','eq'].includes(condition.operator)) return values.join(', ')
+  if (simple && condition.operator === 'gte') return `a partir de ${values[0]}`
+  if (simple && condition.operator === 'lte') return `até ${values[0]}`
   return `${operatorLabels[condition.operator].toLowerCase()} ${values.join(condition.operator === 'between' ? ' a ' : ', ')}`
 }
-export function FilterGroups({ groups, logic, onChange, onLogic, onEdit, onAdd }: {
-  groups: FilterGroup[]; logic: 'and' | 'or'; onChange: (groups: FilterGroup[]) => void; onLogic: (logic: 'and' | 'or') => void; onEdit: (condition: Condition, groupId: string) => void; onAdd: (groupId: string) => void
+export function FilterGroups({ advanced, groups, logic, onChange, onLogic, onEdit, onAdd }: {
+  advanced: boolean; groups: FilterGroup[]; logic: 'and' | 'or'; onChange: (groups: FilterGroup[]) => void; onLogic: (logic: 'and' | 'or') => void; onEdit: (condition: Condition, groupId: string) => void; onAdd: (groupId: string) => void
 }) {
   if (!groups.length) return null
+  if (!advanced) return <section className="filter-builder" aria-label="Filtros ativos">
+    <div className="builder-heading"><span>{groups.reduce((n,g) => n + g.conditions.length, 0)} filtros</span><Button variant="ghost" onClick={() => onChange([])}>Limpar filtros</Button></div>
+    <div className="condition-list simple-filters">{groups.flatMap(group => group.conditions.map(condition => <div className="condition-chip" key={condition.id}>
+      <button type="button" onClick={() => onEdit(condition, group.id)} title={summary(condition, true)}><strong>{fieldById[condition.field].label}{condition.cnaeScope && condition.cnaeScope !== 'qualquer' ? ` · somente ${condition.cnaeScope === 'principal' ? 'principal' : 'secundário'}` : ''}</strong><span>{summary(condition, true)}</span></button>
+      <button type="button" className="chip-remove" aria-label={`Remover filtro ${fieldById[condition.field].label}`} onClick={() => onChange(groups.map(g => g.id === group.id ? {...g,conditions:g.conditions.filter(c => c.id !== condition.id)} : g).filter(g => g.conditions.length))}><X size={12} /></button>
+    </div>))}</div>
+  </section>
   return <section className="filter-builder" aria-label="Condições da busca">
     <div className="builder-heading"><span>{groups.reduce((total, group) => total + group.conditions.length, 0)} filtros · Combinar grupos</span><select aria-label="Combinação entre grupos" value={logic} onChange={event => onLogic(event.target.value as 'and' | 'or')}><option value="and">E · todos</option><option value="or">OU · qualquer um</option></select><Button variant="ghost" onClick={() => onChange([])}>Limpar filtros</Button></div>
     {groups.map((group, index) => <div className="group-row" key={group.id}>

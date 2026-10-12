@@ -11,10 +11,14 @@ import { errorMessage } from '@/services/api'
 import { fieldById } from './catalog'
 import { uid, type Condition, type FilterGroup, type SearchRequest } from './model'
 
+function logicCompatible(groups: FilterGroup[]) { return groups.every(g => g.logic === 'and' && g.quantifier !== 'not_exists' && new Set(g.conditions.map(c => c.field)).size === g.conditions.length) && new Set(groups.map(g => g.scope)).size === groups.length }
+
 export function Explorer() {
   const [search, setSearch] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [groups, setGroups] = useState<FilterGroup[]>([])
+  const [advanced, setAdvanced] = useState(false)
+  const simpleCompatible = logicCompatible(groups)
   const [logic, setLogic] = useState<'and' | 'or'>('and')
   const [editor, setEditor] = useState<EditorTarget | null>(null)
   const [detail, setDetail] = useState<Summary | null>(null)
@@ -59,11 +63,11 @@ export function Explorer() {
     setPage(next)
   }
 
-  function updateGroups(next: FilterGroup[]) { setGroups(next); invalidate() }
+  function updateGroups(next: FilterGroup[]) { if (!next.length) setLogic('and'); setGroups(next); invalidate() }
   function saveCondition(condition: Condition, groupId?: string) {
     const scope = fieldById[condition.field].category === 'Sócios' ? 'same_partner' : 'establishment'
     const cleaned = groups.map(group => ({ ...group, conditions: group.conditions.filter(item => item.id !== condition.id) }))
-    const target = cleaned.find(group => group.id === groupId && group.scope === scope)
+    const target = cleaned.find(group => group.scope === scope && (advanced ? group.id === groupId : true))
     if (target) target.conditions.push(condition)
     else cleaned.push({ id: uid(), logic: 'and', scope, ...(scope === 'same_partner' ? { quantifier: 'exists' as const } : {}), conditions: [condition] })
     updateGroups(cleaned.filter(group => group.conditions.length)); setEditor(null)
@@ -79,11 +83,12 @@ export function Explorer() {
       <form className="search-box" onSubmit={event => { event.preventDefault(); if (!loading) submit() }}><Search size={15} aria-hidden="true" /><input aria-label="Buscar empresas" placeholder="CNPJ, razão social ou nome fantasia" value={search} onChange={event => { setSearch(event.target.value); invalidate() }} />{search && <button type="button" className="icon-button" aria-label="Limpar texto da busca" onClick={() => { setSearch(''); invalidate() }}><X size={13} /></button>}</form>
       <Button variant="primary" onClick={submit} disabled={loading}>Buscar</Button>
       <Button onClick={addFilter}><Plus size={14} />Adicionar filtro</Button>
-      {groups.length > 0 && <Button variant="ghost" onClick={() => setEditor({})}><Plus size={13} />Novo grupo</Button>}
+      <Button variant="ghost" aria-expanded={advanced} disabled={advanced && (!simpleCompatible || logic !== 'and')} title={advanced && (!simpleCompatible || logic !== 'and') ? 'Mantenha as opções abertas para estas regras ou limpe os filtros.' : undefined} onClick={() => setAdvanced(value => !value)}>{advanced ? 'Fechar opções avançadas' : 'Opções avançadas'}</Button>
+      {advanced && groups.length > 0 && <Button variant="ghost" onClick={() => setEditor({})}><Plus size={13} />Novo grupo</Button>}
     </div>
-    <FilterGroups groups={groups} logic={logic} onChange={updateGroups} onLogic={next => { setLogic(next); invalidate() }} onEdit={(condition, groupId) => setEditor({ condition, groupId })} onAdd={groupId => setEditor({ groupId })} />
+    <FilterGroups advanced={advanced} groups={groups} logic={logic} onChange={updateGroups} onLogic={next => { setLogic(next); invalidate() }} onEdit={(condition, groupId) => setEditor({ condition, groupId })} onAdd={groupId => setEditor({ groupId })} />
     <ResultsTable rows={rows} total={result?.total ?? null} loading={pending && !error} error={error} initial={!submitted} hasMore={result?.page.has_more ?? false} competencia={result?.competencia} warnings={result?.meta.warnings ?? []} sorting={sorting} onSorting={next => { setSorting(next); setPage(0); setCursors([null]); }} page={page} pageSize={pageSize} onPage={navigate} onPageSize={size => { setPageSize(size); setPage(0); setCursors([null]); }} onOpen={setDetail} onReset={reset} onRetry={submit} selectedCnpjs={selectedCnpjs} onSelection={ids => setSelection({ key: selectionKey, ids })} />
-    {editor && <FilterEditor target={editor} groups={groups} onSave={saveCondition} onClose={() => setEditor(null)} />}
+    {editor && <FilterEditor advanced={advanced} target={editor} groups={groups} onSave={saveCondition} onClose={() => setEditor(null)} />}
     {detail && <Details row={detail} onClose={() => setDetail(null)} />}
   </div>
 }

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { getCatalog, type CatalogResponse } from '@/services/cnpj'
 import { errorMessage } from '@/services/api'
-import { rememberOptions } from './catalog'
-import { cnaeLabel } from '@/lib/cnae'
+import { rememberOptions, optionLabel } from './catalog'
+import { normalize } from './model'
 
 export function CatalogOptions({ field, slug, values, onToggle }: { field: string; slug: string; values: string[]; onToggle: (value: string) => void }) {
   const [query, setQuery] = useState('')
@@ -21,7 +21,7 @@ export function CatalogOptions({ field, slug, values, onToggle }: { field: strin
   useEffect(() => {
     const controller = new AbortController()
     setBusy(true); setError('')
-    getCatalog(slug, applied, cursor, controller.signal).then(data => {
+    getCatalog(slug, field === 'estabelecimentos.uf' ? '' : applied, cursor, controller.signal).then(data => {
       if (controller.signal.aborted) return
       rememberOptions(field, data.items)
       setItems(old => cursor ? [...old, ...data.items] : data.items)
@@ -29,10 +29,11 @@ export function CatalogOptions({ field, slug, values, onToggle }: { field: strin
     }).catch(cause => { if (!controller.signal.aborted) { setItems([]); setNext(null); setError(errorMessage(cause)); setBusy(false) } })
     return () => controller.abort()
   }, [slug, field, applied, cursor, attempt])
+  const displayed = items.filter(item => field !== 'estabelecimentos.uf' || normalize(optionLabel(field, item.codigo)).includes(normalize(applied)))
   const pending = busy || query !== applied
   return <>
-    <input aria-label="Buscar valor" placeholder="Buscar valor ou código…" value={query} onChange={event => setQuery(event.target.value)} />
-    {pending ? <span role="status">Carregando catálogo…</span> : <div className="value-options">{items.map(item => <label key={item.codigo}><input type="checkbox" checked={values.includes(item.codigo)} onChange={() => onToggle(item.codigo)} /><span>{field === 'cnae' ? cnaeLabel(item.codigo, item.descricao || 'Descrição indisponível') : `${item.codigo} · ${item.descricao || 'Descrição indisponível'}`}</span></label>)}{!items.length && !error && <p role="status">Nenhum código encontrado.</p>}</div>}
+    <input aria-label="Buscar valor" placeholder={field === 'cnae' ? 'Buscar código ou atividade…' : 'Buscar valor ou código…'} value={query} onChange={event => setQuery(event.target.value)} />
+    {pending ? <span role="status">Carregando catálogo…</span> : <div className="value-options">{displayed.map(item => <label key={item.codigo}><input type="checkbox" checked={values.includes(item.codigo)} onChange={() => onToggle(item.codigo)} /><span>{optionLabel(field, item.codigo)}</span></label>)}{!displayed.length && !error && <p role="status">Nenhum código encontrado.</p>}</div>}
     {error && <div role="alert"><p className="form-error">{error}</p><Button onClick={() => setAttempt(value => value + 1)}>Tentar novamente</Button></div>}
     {!pending && !error && next && <Button onClick={() => setCursor(next)}>Carregar mais valores</Button>}
   </>

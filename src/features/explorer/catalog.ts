@@ -7,6 +7,7 @@ export interface Field {
   id: string; label: string; category: string; type: FieldType; options?: Option[]; note?: string
 }
 const opts = (entries: string[]): Option[] => entries.map(entry => { const [value, label] = entry.split('|'); return { value, label: label ?? value } })
+export const ufNames: Record<string, string> = { AC:'Acre', AL:'Alagoas', AP:'Amapá', AM:'Amazonas', BA:'Bahia', CE:'Ceará', DF:'Distrito Federal', ES:'Espírito Santo', GO:'Goiás', MA:'Maranhão', MT:'Mato Grosso', MS:'Mato Grosso do Sul', MG:'Minas Gerais', PA:'Pará', PB:'Paraíba', PR:'Paraná', PE:'Pernambuco', PI:'Piauí', RJ:'Rio de Janeiro', RN:'Rio Grande do Norte', RS:'Rio Grande do Sul', RO:'Rondônia', RR:'Roraima', SC:'Santa Catarina', SP:'São Paulo', SE:'Sergipe', TO:'Tocantins' }
 export const categories = ['Identificação', 'Localização', 'Atividade', 'Situação cadastral', 'Perfil da empresa', 'Contatos', 'Simples/MEI', 'Sócios']
 export const cnaes: Option[] = []
 export const municipalities: Option[] = []
@@ -18,10 +19,10 @@ export const fields: Field[] = [
   f('empresas.razao_social', 'Razão social', 'Identificação'),
   f('estabelecimentos.nome_fantasia', 'Nome fantasia', 'Identificação'),
   f('estabelecimentos.identificador_matriz_filial', 'Matriz ou filial', 'Identificação', 'choice', opts(['1|Matriz', '2|Filial'])),
-  f('estabelecimentos.uf', 'UF', 'Localização', 'choice', opts('AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' '))),
+  f('estabelecimentos.uf', 'UF', 'Localização', 'choice', Object.entries(ufNames).map(([value,name]) => ({ value, label: `${name} · ${value}` }))),
   f('estabelecimentos.municipio', 'Município', 'Localização', 'choice', municipalities, 'Códigos da Receita, sem conversão para IBGE. Aceita códigos não listados.'),
   ...[['bairro','Bairro'],['cep','CEP'],['tipo_logradouro','Tipo de logradouro'],['logradouro','Logradouro'],['numero','Número'],['complemento','Complemento'],['pais','País'],['nome_cidade_exterior','Cidade no exterior']].map(([id,label]) => f(`estabelecimentos.${id}`, label, 'Localização')),
-  f('cnae', 'CNAE', 'Atividade', 'cnae', cnaes, 'Escolha o escopo da atividade. Busque no catálogo da Receita ou informe um código.'),
+  f('cnae', 'CNAE', 'Atividade', 'cnae', cnaes, 'Busque um código ou atividade.'),
   f('estabelecimentos.situacao_cadastral', 'Situação cadastral', 'Situação cadastral', 'choice', opts(['01|Nula','02|Ativa','03|Suspensa','04|Inapta','08|Baixada'])),
   f('estabelecimentos.data_inicio_atividade', 'Data de abertura', 'Situação cadastral', 'date'),
   f('estabelecimentos.data_situacao_cadastral', 'Data da situação cadastral', 'Situação cadastral', 'date'),
@@ -59,9 +60,9 @@ export function operatorsFor(field: Field): Operator[] {
 }
 const optionCache = new Map<string, string>()
 export function rememberOptions(field: string, items: { codigo: string; descricao: string | null }[]) {
-  items.forEach(item => optionCache.set(`${field}:${item.codigo}`, field === 'cnae' ? cnaeLabel(item.codigo, item.descricao) : item.descricao ? `${item.codigo} · ${item.descricao}` : item.codigo))
+  items.forEach(item => optionCache.set(`${field}:${item.codigo}`, field === 'cnae' ? cnaeLabel(item.codigo, item.descricao) : item.descricao ? `${item.descricao} · ${item.codigo}` : item.codigo))
 }
-export const optionLabel = (field: string, value: string) => optionCache.get(`${field}:${value}`) ?? fieldById[field]?.options?.find(option => option.value === value)?.label ?? (field === 'cnae' ? cnaeLabel(value) : value)
+export const optionLabel = (field: string, value: string) => fieldById[field]?.options?.find(option => option.value === value)?.label ?? optionCache.get(`${field}:${value}`) ?? (field === 'cnae' ? cnaeLabel(value) : value)
 
 export const catalogFor: Record<string, string> = {
  'cnae': 'cnaes', 'estabelecimentos.municipio': 'municipios', 'empresas.natureza_juridica': 'naturezas',
