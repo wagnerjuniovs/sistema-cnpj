@@ -26,7 +26,7 @@ export function FilterEditor({ advanced, target, groups, onSave, onClose }: {
   const [custom, setCustom] = useState('')
   const [error, setError] = useState('')
   const [age, setAge] = useState('')
-  const matches = useMemo(() => fields.filter(item => (category === 'Todos' || category === item.category) && normalize(`${item.label} ${item.category}`).includes(normalize(query))), [category, query])
+  const matches = useMemo(() => fields.filter(item => (category === 'Todos' || category === item.category) && normalize(`${item.label} ${item.category} ${item.id === 'estabelecimentos.data_inicio_atividade' ? 'idade da empresa' : ''}`).includes(normalize(query))), [category, query])
   const presence = operator === 'present' || operator === 'missing'
   const isMulti = field?.type === 'choice' || field?.type === 'cnae' || operator === 'in' || operator === 'not_in'
   const partner = field?.category === 'Sócios'
