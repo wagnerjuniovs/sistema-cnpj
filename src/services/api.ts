@@ -7,7 +7,7 @@ export function messageFor(code: string): string {
     BUSCA_AMPLA_DEMAIS: 'Essa busca encontrou um universo muito amplo. Adicione mais um filtro para refinar os resultados. Use UF, município, CNAE, porte ou situação.',
     QUERY_TIMEOUT: 'A consulta excedeu o tempo limite. Tente novamente. Se persistir, informe os filtros utilizados para investigação.',
     TIMEOUT: 'A API demorou demais para responder. Tente novamente. Se persistir, informe os filtros utilizados para investigação.',
-    NETWORK_ERROR: 'API local indisponível. Verifique se ela está em execução e tente novamente.',
+    NETWORK_ERROR: 'Aguardando a API do SSD. Confira a conexão do SSD e permita o acesso à rede local no navegador. Em um computador novo, execute CONFIGURAR_ESTE_COMPUTADOR no SSD uma vez.',
     DATABASE_UNAVAILABLE: 'Banco temporariamente indisponível. Tente novamente.',
     DB_UNAVAILABLE: 'Banco temporariamente indisponível. Tente novamente.',
     INVALID_FILTER: 'Filtros inválidos. Confira os valores e as condições informadas.',

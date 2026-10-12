@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const api = process.env.VITE_API_URL?.trim() ?? ''
   if (pages && api) {
     const url = new URL(api)
-    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || /^(localhost|127\.|\[?::1\]?)/i.test(url.hostname)) throw new Error('Pages exige URL HTTPS pública sem credenciais.')
+    if (api !== 'http://127.0.0.1:3333' && (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || /^(localhost|127\.|\[?::1\]?)/i.test(url.hostname))) throw new Error('Pages exige HTTPS sem credenciais ou a API local autorizada em 127.0.0.1:3333.')
   }
   return {
   base: pages ? '/sistema-cnpj/' : '/',

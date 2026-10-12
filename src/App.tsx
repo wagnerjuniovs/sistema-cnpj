@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Explorer } from '@/features/explorer/Explorer'
 import { Lookup } from '@/features/lookup/Lookup'
 import { initialize } from '@/services/cnpj'
-import { errorMessage } from '@/services/api'
+import { ApiError, errorMessage } from '@/services/api'
 import { configureContract } from '@/features/explorer/catalog'
 import { Button } from '@/components/ui/button'
 
@@ -19,9 +19,20 @@ export function App() {
   const [attempt, setAttempt] = useState(0)
   useEffect(() => {
     let active = true
+    let retry: ReturnType<typeof setTimeout> | undefined
     setError('')
-    initialize().then(({ contract }) => { configureContract(contract); if (active) setReady(true) }).catch(cause => { if (active) setError(errorMessage(cause)) })
-    return () => { active = false }
+    initialize().then(({ contract }) => {
+      if (!active) return
+      configureContract(contract)
+      setReady(true)
+    }).catch(cause => {
+      if (!active) return
+      setError(errorMessage(cause))
+      if (cause instanceof ApiError && ['NETWORK_ERROR', 'DATABASE_UNAVAILABLE', 'DB_UNAVAILABLE', 'TIMEOUT'].includes(cause.code)) {
+        retry = setTimeout(() => setAttempt(value => value + 1), 5000)
+      }
+    })
+    return () => { active = false; clearTimeout(retry) }
   }, [attempt])
   useEffect(() => {
     const sync = () => setPage(readPage())

@@ -1,25 +1,17 @@
 # Sistema CNPJ — frontend
 
-Interface React, TypeScript e Vite para explorar empresas e consultar CNPJ.
-
 Site: https://wagnerjuniovs.github.io/sistema-cnpj/
 
-**FRONTEND_PUBLICADO_API_REMOTA_PENDENTE**
+O site usa a API em http://127.0.0.1:3333 no mesmo computador em que o SSD CNPJ_DADOS estiver conectado. API e PostgreSQL permanecem no SSD; este repositório contém apenas o frontend. Não há túnel, API pública ou dados fictícios.
 
-Este repositório contém somente o frontend. A API e o PostgreSQL permanecem no SSD do proprietário. Nenhum backend, banco, conjunto de dados da Receita, credencial, evidência local ou arquivo de ambiente integra esta publicação.
+Em cada computador Windows compatível, execute uma vez CONFIGURAR_ESTE_COMPUTADOR.cmd na raiz do SSD. O monitor instalado na sessão do usuário detecta o SSD e inicia os serviços. Depois, conecte o SSD e abra o site. Permita o acesso à rede local quando o navegador solicitar. O site não pode iniciar programas do Windows sozinho.
 
-Sem URL de API configurada, o site apresenta as abas e uma mensagem de consultas indisponíveis. Não exibe empresas fictícias nem tenta acessar localhost do visitante. As buscas públicas dependem de uma conexão HTTPS segura com a API; esta publicação não cria túnel, abre portas ou expõe serviços.
+O monitor verifica a presença do SSD a cada 5 segundos. Se o site abrir antes da API, ele tenta reconectar automaticamente. INICIAR_CNPJ.cmd permite iniciar manualmente. Antes de remover o SSD, encerre o banco com PARAR_CNPJ.cmd e ejete a unidade pelo Windows.
 
-## Desenvolvimento
+A configuração foi validada no computador de desenvolvimento. Outro computador pode precisar de permissão de acesso aos arquivos do SSD e do runtime Microsoft Visual C++; a configuração informa falhas sem alterar ou reinicializar a base. Celulares não executam esta API Windows.
 
-Use Node.js 24 e `npm ci`. Configure `VITE_API_URL` em um `.env.local` privado para a API acessível no seu ambiente e execute `npm run dev`. Variáveis `VITE_` são públicas: nunca coloque senhas ou tokens nelas.
+## Desenvolvimento e publicação
 
-## Publicação
+Node.js 24, npm ci, npm run dev. Use VITE_API_URL no .env.local privado. Variáveis VITE_ são públicas: nunca inclua senhas.
 
-Push na branch `main` executa o workflow de build, checagem e publicação no GitHub Pages. Somente `dist` entra no artefato do site; `dist` não é versionado. As actions oficiais estão fixadas por commit e as permissões de publicação ficam restritas ao job de deploy.
-
-`npm run build:pages` usa `/sistema-cnpj/`, ignora arquivos `.env` locais e recebe somente `VITE_API_URL` do ambiente de build. No GitHub, use a variável de repositório `VITE_API_URL` quando existir uma API HTTPS segura, sem credenciais na URL. Depois, execute novamente o workflow. Nenhuma API pública está configurada nesta entrega.
-
-Para validar o artefato: `npm run build:pages` e `npm test`. O teste verifica os caminhos de assets e impede endereços loopback, credenciais reconhecíveis, source maps e marcadores de dados demonstrativos no bundle. A navegação usa hashes (`#consultar`), preservando a subpasta do Pages.
-
-Referências: [Vite 6 — GitHub Pages](https://v6.vite.dev/guide/static-deploy#github-pages) e [workflows de GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+O workflow publica somente dist na branch main. VITE_API_URL é uma variável do repositório, atualmente http://127.0.0.1:3333. O build Pages ignora arquivos .env locais e usa /sistema-cnpj/. Execute npm run build:pages e npm test para validar. O endereço loopback acima é autorizado explicitamente; demais endereços loopback, credenciais e mocks são rejeitados na auditoria.
