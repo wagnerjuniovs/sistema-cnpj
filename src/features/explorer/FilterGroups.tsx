@@ -4,6 +4,7 @@ import { fieldById, operatorLabels, optionLabel } from './catalog'
 import { dateFormat, moneyFormat, type Condition, type FilterGroup } from './model'
 
 function summary(condition: Condition, simple = false) {
+  if (condition.minAgeYears !== undefined) return `${condition.minAgeYears} ${condition.minAgeYears === 1 ? 'ano' : 'anos'} ou mais`
   const field = fieldById[condition.field]
   if (['present','missing'].includes(condition.operator)) return operatorLabels[condition.operator].toLowerCase()
   const values = condition.values.map(value => field.type === 'number' ? moneyFormat(value) : field.type === 'date' ? dateFormat(value) : optionLabel(field.id, value))

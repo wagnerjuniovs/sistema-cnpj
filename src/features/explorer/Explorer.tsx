@@ -8,6 +8,7 @@ import { ResultsTable } from './ResultsTable'
 import { Details } from './Details'
 import { searchCompanies, type Summary, type SearchResponse } from '@/services/cnpj'
 import { errorMessage } from '@/services/api'
+import { refreshAgeLimits } from './dates'
 import { fieldById } from './catalog'
 import { uid, type Condition, type FilterGroup, type SearchRequest } from './model'
 
@@ -54,7 +55,7 @@ export function Explorer() {
     return () => controller.abort()
   }, [request, submitted, attempt, cursors, page])
   function invalidate() { setSubmitted(false); setPage(0); setCursors([null]); setResult(null); setRows([]); setError(''); setLoading(false) }
-  function submit() { setLoading(true); setError(''); setAppliedSearch(search); setPage(0); setCursors([null]); setSubmitted(true); setAttempt(value => value + 1) }
+  function submit() { setGroups(previous => refreshAgeLimits(previous)); setLoading(true); setError(''); setAppliedSearch(search); setPage(0); setCursors([null]); setSubmitted(true); setAttempt(value => value + 1) }
   function navigate(next: number) {
     if (next > page) {
       if (!result?.page.has_more || !result.page.next_cursor) return

@@ -30,7 +30,7 @@ function checkPage(page: CursorPage) {
   if (!page || typeof page.has_more !== 'boolean' || (page.has_more && typeof page.next_cursor !== 'string')) throw new ApiError('INVALID_RESPONSE')
 }
 export function searchBody(query: SearchRequest, dataset: string, cursor: string | null) {
-  const filter = { ...query.filter, groups: query.filter.groups.map(group => ({ ...group, conditions: group.conditions.map(condition => condition.field === 'cnae' ? { ...condition, values: condition.values.map(normalizeCnae) } : condition) })) }
+  const filter = { ...query.filter, groups: query.filter.groups.map(group => ({ ...group, conditions: group.conditions.map(({ minAgeYears: _uiAge, ...condition }) => condition.field === 'cnae' ? { ...condition, values: condition.values.map(normalizeCnae) } : condition) })) }
   return { version: query.version, entity: query.entity, dataset_id: dataset, search: query.search.trim(), filter, sort: query.sort, page: { limit: query.page.size, cursor }, count: 'none' }
 }
 export async function searchCompanies(query: SearchRequest, cursor: string | null, signal?: AbortSignal) {

@@ -17,6 +17,7 @@ export interface Condition {
   field: string
   operator: Operator
   values: string[]
+  minAgeYears?: number
   cnaeScope?: 'principal' | 'secundario' | 'qualquer'
 }
 export interface FilterGroup {

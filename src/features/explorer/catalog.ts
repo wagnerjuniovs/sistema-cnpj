@@ -24,7 +24,7 @@ export const fields: Field[] = [
   ...[['bairro','Bairro'],['cep','CEP'],['tipo_logradouro','Tipo de logradouro'],['logradouro','Logradouro'],['numero','Número'],['complemento','Complemento'],['pais','País'],['nome_cidade_exterior','Cidade no exterior']].map(([id,label]) => f(`estabelecimentos.${id}`, label, 'Localização')),
   f('cnae', 'CNAE', 'Atividade', 'cnae', cnaes, 'Busque um código ou atividade.'),
   f('estabelecimentos.situacao_cadastral', 'Situação cadastral', 'Situação cadastral', 'choice', opts(['01|Nula','02|Ativa','03|Suspensa','04|Inapta','08|Baixada'])),
-  f('estabelecimentos.data_inicio_atividade', 'Data de abertura', 'Situação cadastral', 'date'),
+  f('estabelecimentos.data_inicio_atividade', 'Idade da empresa', 'Situação cadastral', 'date'),
   f('estabelecimentos.data_situacao_cadastral', 'Data da situação cadastral', 'Situação cadastral', 'date'),
   f('estabelecimentos.motivo_situacao_cadastral', 'Motivo da situação', 'Situação cadastral'),
   f('estabelecimentos.situacao_especial', 'Situação especial', 'Situação cadastral'),
