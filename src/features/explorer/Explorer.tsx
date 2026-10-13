@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { SortingState } from '@tanstack/react-table'
 import { Plus, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -6,7 +6,7 @@ import { FilterEditor, type EditorTarget } from './FilterEditor'
 import { FilterGroups } from './FilterGroups'
 import { ResultsTable } from './ResultsTable'
 import { Details } from './Details'
-import { searchCompanies, type Summary, type SearchResponse } from '@/services/cnpj'
+import { countCompanies, searchCompanies, type Summary, type SearchResponse } from '@/services/cnpj'
 import { errorMessage } from '@/services/api'
 import { refreshAgeLimits } from './dates'
 import { fieldById } from './catalog'
@@ -37,6 +37,9 @@ export function Explorer() {
   const selectionKey = JSON.stringify({ search, logic, groups })
   const selectedCnpjs = selection.key === selectionKey ? selection.ids : []
   const [resultKey, setResultKey] = useState('')
+  const [countResult, setCountResult] = useState<{ key: string; total: string | null; status: 'loading' | 'exact' | 'error' }>({ key: '', total: null, status: 'loading' })
+  const countCache = useRef<{ key: string; total: string } | null>(null)
+  const countKey = JSON.stringify({ search: appliedSearch, filter: { logic, groups }, attempt })
   const request = useMemo<SearchRequest>(() => ({ version: 1, entity: 'establishment', search: appliedSearch, filter: { logic, groups }, sort: sorting.map(item => ({ field: item.id, direction: item.desc ? 'desc' : 'asc' })), page: { index: page, size: pageSize } }), [appliedSearch, logic, groups, sorting, page, pageSize])
   const requestKey = JSON.stringify(request)
   const pending = submitted && (loading || resultKey !== requestKey)
@@ -46,14 +49,23 @@ export function Explorer() {
     if (!submitted) return
     const controller = new AbortController()
     setLoading(true); setError('')
-    searchCompanies(request, cursors[page] ?? null, controller.signal).then(result => {
+    if (countCache.current?.key !== countKey) setCountResult({ key: countKey, total: null, status: 'loading' })
+    searchCompanies(request, cursors[page] ?? null, controller.signal).then(async result => {
       if (controller.signal.aborted) return
       setResult(result); setRows(result.rows); setResultKey(JSON.stringify(request)); setLoading(false)
+      if (countCache.current?.key === countKey) return
+      try {
+        const total = page === 0 && !result.page.has_more ? String(result.rows.length) : await countCompanies(request, controller.signal)
+        if (controller.signal.aborted) return
+        countCache.current = { key: countKey, total }; setCountResult({ key: countKey, total, status: 'exact' })
+      } catch {
+        if (!controller.signal.aborted) setCountResult({ key: countKey, total: null, status: 'error' })
+      }
     }).catch(cause => {
-      if (!controller.signal.aborted) { setError(errorMessage(cause)); setLoading(false) }
+      if (!controller.signal.aborted) { setError(errorMessage(cause)); setLoading(false); if (countCache.current?.key !== countKey) setCountResult({ key: countKey, total: null, status: 'error' }) }
     })
     return () => controller.abort()
-  }, [request, submitted, attempt, cursors, page])
+  }, [request, submitted, attempt, cursors, page, countKey])
   function invalidate() { setSubmitted(false); setPage(0); setCursors([null]); setResult(null); setRows([]); setError(''); setLoading(false) }
   function submit() { setGroups(previous => refreshAgeLimits(previous)); setLoading(true); setError(''); setAppliedSearch(search); setPage(0); setCursors([null]); setSubmitted(true); setAttempt(value => value + 1) }
   function navigate(next: number) {
@@ -88,7 +100,7 @@ export function Explorer() {
       {advanced && groups.length > 0 && <Button variant="ghost" onClick={() => setEditor({})}><Plus size={13} />Novo grupo</Button>}
     </div>
     <FilterGroups advanced={advanced} groups={groups} logic={logic} onChange={updateGroups} onLogic={next => { setLogic(next); invalidate() }} onEdit={(condition, groupId) => setEditor({ condition, groupId })} onAdd={groupId => setEditor({ groupId })} />
-    <ResultsTable rows={rows} total={result?.total ?? null} loading={pending && !error} error={error} initial={!submitted} hasMore={result?.page.has_more ?? false} competencia={result?.competencia} warnings={result?.meta.warnings ?? []} sorting={sorting} onSorting={next => { setSorting(next); setPage(0); setCursors([null]); }} page={page} pageSize={pageSize} onPage={navigate} onPageSize={size => { setPageSize(size); setPage(0); setCursors([null]); }} onOpen={setDetail} onReset={reset} onRetry={submit} selectedCnpjs={selectedCnpjs} onSelection={ids => setSelection({ key: selectionKey, ids })} />
+    <ResultsTable rows={rows} total={countResult.key === countKey ? countResult.total : null} countStatus={countResult.key === countKey ? countResult.status : 'loading'} loading={pending && !error} error={error} initial={!submitted} hasMore={result?.page.has_more ?? false} competencia={result?.competencia} warnings={result?.meta.warnings ?? []} sorting={sorting} onSorting={next => { setSorting(next); setPage(0); setCursors([null]); }} page={page} pageSize={pageSize} onPage={navigate} onPageSize={size => { setPageSize(size); setPage(0); setCursors([null]); }} onOpen={setDetail} onReset={reset} onRetry={submit} selectedCnpjs={selectedCnpjs} onSelection={ids => setSelection({ key: selectionKey, ids })} />
     {editor && <FilterEditor advanced={advanced} target={editor} groups={groups} onSave={saveCondition} onClose={() => setEditor(null)} />}
     {detail && <Details row={detail} onClose={() => setDetail(null)} />}
   </div>

@@ -45,6 +45,14 @@ async function queryString(extra: Record<string, string> = {}) {
   const { dataset } = await initialize()
   return new URLSearchParams({ dataset_id: dataset.dataset_id, ...extra }).toString()
 }
+export async function countCompanies(query: SearchRequest, signal?: AbortSignal) {
+  const { dataset } = await initialize()
+  const { sort: _sort, page: _page, count: _count, ...body } = searchBody(query, dataset.dataset_id, null)
+  const result = await request<Envelope & { total: string | null; total_status: string }>('/api/v1/estabelecimentos/count', { body, signal, timeout: 135000 })
+  checkEnvelope(result)
+  if (result.total_status !== 'exact' || typeof result.total !== 'string' || !/^\d+$/.test(result.total)) throw new ApiError('COUNT_UNAVAILABLE')
+  return result.total
+}
 export async function getCompany(cnpj: string, signal?: AbortSignal): Promise<CompanyDetail> {
   const data = await request<CompanyDetail & Envelope>(`/api/v1/estabelecimentos/${encodeURIComponent(cnpj)}?${await queryString()}`, { signal })
   checkEnvelope(data)

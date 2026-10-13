@@ -19,7 +19,8 @@ function SelectionCheckbox({ checked, partial, disabled, label, onChange }: { ch
   useEffect(() => { if (ref.current) ref.current.indeterminate = !!partial }, [partial])
   return <input ref={ref} type="checkbox" aria-label={label} aria-checked={partial ? 'mixed' : checked} checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)} />
 }
-export function ResultsTable({ rows, total, loading, initial, hasMore, competencia, warnings, error, sorting, onSorting, page, pageSize, onPage, onPageSize, onOpen, onReset, onRetry, selectedCnpjs, onSelection }: {
+export function ResultsTable({ rows, total, countStatus, loading, initial, hasMore, competencia, warnings, error, sorting, onSorting, page, pageSize, onPage, onPageSize, onOpen, onReset, onRetry, selectedCnpjs, onSelection }: {
+  countStatus: 'loading' | 'exact' | 'error'
   rows: Summary[]; total: string | null; loading: boolean; initial: boolean; hasMore: boolean; competencia?: string; warnings: string[]; error: string; sorting: SortingState; onSorting: (sort: SortingState) => void; page: number; pageSize: number; onPage: (page: number) => void; onPageSize: (size: number) => void; onOpen: (row: Summary) => void; onReset: () => void; onRetry: () => void
   selectedCnpjs: string[]; onSelection: (ids: string[]) => void
 }) {
@@ -59,7 +60,7 @@ export function ResultsTable({ rows, total, loading, initial, hasMore, competenc
     onSelection([...next])
   }
   return <section className={`results density-${density}`} aria-label="Resultados da Receita" aria-busy={busy}>
-    <div className="results-toolbar"><span aria-live="polite">{busy ? 'Carregando…' : failed ? 'Consulta não concluída' : initial ? 'Defina os filtros e clique em Buscar' : <><strong>{rows.length}</strong> nesta página <span className="muted">· {total === null ? 'total não calculado' : `${total} no total`} · Base {competencia}</span></>}</span>
+    <div className="results-toolbar"><span aria-live="polite">{initial ? 'Defina os filtros e clique em Buscar' : <>{total !== null ? <strong>{BigInt(total).toLocaleString('pt-BR')} {total === '1' ? 'empresa encontrada' : 'empresas encontradas'}</strong> : <strong>{countStatus === 'error' ? 'Total indisponível' : 'Calculando total…'}</strong>}<span className="muted"> · {busy ? 'Carregando página…' : failed ? 'Consulta não concluída' : `${rows.length} nesta página`}{competencia ? ` · Base ${competencia}` : ''}</span></>}</span>
       {selectedCnpjs.length > 0 && <div className="selection-summary"><span>{selectedCnpjs.length} selecionados</span><Button variant="ghost" onClick={() => onSelection([])}>Limpar seleção</Button></div>}
       <div className="results-actions">
       <Popover.Root><Popover.Trigger asChild><Button>Exportar</Button></Popover.Trigger><Popover.Portal><Popover.Content className="column-popover" sideOffset={6} align="end"><p>Exportação será habilitada na Etapa 7.</p><Popover.Arrow className="popover-arrow" /></Popover.Content></Popover.Portal></Popover.Root>
