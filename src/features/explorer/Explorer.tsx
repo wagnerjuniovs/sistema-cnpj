@@ -39,6 +39,7 @@ export function Explorer({ active = true }: { active?: boolean }) {
   const [resultKey, setResultKey] = useState('')
   const [countResult, setCountResult] = useState<{ key: string; total: string | null; status: 'loading' | 'exact' | 'error' }>({ key: '', total: null, status: 'loading' })
   const countCache = useRef<{ key: string; total: string } | null>(null)
+  const settledSearch = useRef('')
   const countKey = JSON.stringify({ search: appliedSearch, filter: { logic, groups }, attempt })
   const request = useMemo<SearchRequest>(() => ({ version: 1, entity: 'establishment', search: appliedSearch, filter: { logic, groups }, sort: sorting.map(item => ({ field: item.id, direction: item.desc ? 'desc' : 'asc' })), page: { index: page, size: pageSize } }), [appliedSearch, logic, groups, sorting, page, pageSize])
   const requestKey = JSON.stringify(request)
@@ -46,18 +47,20 @@ export function Explorer({ active = true }: { active?: boolean }) {
   useEffect(() => { setSelection({ key: selectionKey, ids: [] }) }, [selectionKey])
 
   useEffect(() => {
-    if (!submitted) return
+    const executionKey = JSON.stringify({ request, cursor: cursors[page] ?? null, attempt })
+    if (!active || editor || !submitted || settledSearch.current === executionKey) return
     const controller = new AbortController()
     setLoading(true); setError('')
     if (countCache.current?.key !== countKey) setCountResult({ key: countKey, total: null, status: 'loading' })
     searchCompanies(request, cursors[page] ?? null, controller.signal).then(result => {
       if (controller.signal.aborted) return
+      settledSearch.current = executionKey
       setResult(result); setRows(result.rows); setResultKey(JSON.stringify(request)); setLoading(false)
     }).catch(cause => {
-      if (!controller.signal.aborted) { setError(errorMessage(cause)); setLoading(false); if (countCache.current?.key !== countKey) setCountResult({ key: countKey, total: null, status: 'error' }) }
+      if (!controller.signal.aborted) { settledSearch.current = executionKey; setError(errorMessage(cause)); setLoading(false); if (countCache.current?.key !== countKey) setCountResult({ key: countKey, total: null, status: 'error' }) }
     })
     return () => controller.abort()
-  }, [request, submitted, attempt, cursors, page, countKey])
+  }, [active, editor, request, submitted, attempt, cursors, page, countKey])
   useEffect(() => {
     // Release the single-query API gate for pagination, catalogs and details.
     // Resume the same count once the user returns to the completed results.
