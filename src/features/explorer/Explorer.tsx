@@ -14,7 +14,7 @@ import { uid, type Condition, type FilterGroup, type SearchRequest } from './mod
 
 function logicCompatible(groups: FilterGroup[]) { return groups.every(g => g.logic === 'and' && g.quantifier !== 'not_exists' && new Set(g.conditions.map(c => c.field)).size === g.conditions.length) && new Set(groups.map(g => g.scope)).size === groups.length }
 
-export function Explorer() {
+export function Explorer({ active = true }: { active?: boolean }) {
   const [search, setSearch] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [groups, setGroups] = useState<FilterGroup[]>([])
@@ -50,22 +50,29 @@ export function Explorer() {
     const controller = new AbortController()
     setLoading(true); setError('')
     if (countCache.current?.key !== countKey) setCountResult({ key: countKey, total: null, status: 'loading' })
-    searchCompanies(request, cursors[page] ?? null, controller.signal).then(async result => {
+    searchCompanies(request, cursors[page] ?? null, controller.signal).then(result => {
       if (controller.signal.aborted) return
       setResult(result); setRows(result.rows); setResultKey(JSON.stringify(request)); setLoading(false)
-      if (countCache.current?.key === countKey) return
-      try {
-        const total = page === 0 && !result.page.has_more ? String(result.rows.length) : await countCompanies(request, controller.signal)
-        if (controller.signal.aborted) return
-        countCache.current = { key: countKey, total }; setCountResult({ key: countKey, total, status: 'exact' })
-      } catch {
-        if (!controller.signal.aborted) setCountResult({ key: countKey, total: null, status: 'error' })
-      }
     }).catch(cause => {
       if (!controller.signal.aborted) { setError(errorMessage(cause)); setLoading(false); if (countCache.current?.key !== countKey) setCountResult({ key: countKey, total: null, status: 'error' }) }
     })
     return () => controller.abort()
   }, [request, submitted, attempt, cursors, page, countKey])
+  useEffect(() => {
+    // Release the single-query API gate for pagination, catalogs and details.
+    // Resume the same count once the user returns to the completed results.
+    if (!active || !submitted || pending || error || !result || editor || detail || countCache.current?.key === countKey) return
+    const controller = new AbortController()
+    setCountResult({ key: countKey, total: null, status: 'loading' })
+    const counting = page === 0 && !result.page.has_more ? Promise.resolve(String(result.rows.length)) : countCompanies(request, controller.signal)
+    counting.then(total => {
+      if (controller.signal.aborted) return
+      countCache.current = { key: countKey, total }; setCountResult({ key: countKey, total, status: 'exact' })
+    }).catch(() => {
+      if (!controller.signal.aborted) setCountResult({ key: countKey, total: null, status: 'error' })
+    })
+    return () => controller.abort()
+  }, [active, submitted, pending, error, result, editor, detail, countKey, request, page])
   function invalidate() { setSubmitted(false); setPage(0); setCursors([null]); setResult(null); setRows([]); setError(''); setLoading(false) }
   function submit() { setGroups(previous => refreshAgeLimits(previous)); setLoading(true); setError(''); setAppliedSearch(search); setPage(0); setCursors([null]); setSubmitted(true); setAttempt(value => value + 1) }
   function navigate(next: number) {

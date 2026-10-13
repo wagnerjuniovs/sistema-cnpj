@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ListFilter, Search } from 'lucide-react'
 import { MotionConfig } from 'motion/react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -59,7 +59,7 @@ export function App() {
           </TabsList>
         </header>
         <main id="conteudo" tabIndex={-1} className="main-content">
-          {!ready ? <div className="result-state" role={error ? 'alert' : 'status'}>{error || 'Conectando à API local…'}{error && <Button onClick={() => setAttempt(value => value + 1)}>Tentar novamente</Button>}</div> : <><TabsContent value="explorar" forceMount><Explorer /></TabsContent><TabsContent value="consultar" forceMount><Lookup /></TabsContent></>}
+          {!ready ? <div className="result-state" role={error ? 'alert' : 'status'}>{error || 'Conectando à API local…'}{error && <Button onClick={() => setAttempt(value => value + 1)}>Tentar novamente</Button>}</div> : <><TabsContent value="explorar" forceMount><Explorer active={page === 'explorar'} /></TabsContent><TabsContent value="consultar" forceMount><Lookup /></TabsContent></>}
         </main>
       </Tabs>
     </MotionConfig>
