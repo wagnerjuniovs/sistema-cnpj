@@ -11,7 +11,7 @@ export interface Establishment {
   descricoes?: Record<string, string | null | RecordData>
   competencia?: string
 }
-export type Operator = 'in' | 'not_in' | 'contains' | 'starts_with' | 'eq' | 'between' | 'gte' | 'lte' | 'present' | 'missing' | 'all'
+export type Operator = 'in' | 'not_in' | 'contains' | 'starts_with' | 'eq' | 'between' | 'gte' | 'lte' | 'gt' | 'lt' | 'present' | 'missing' | 'all'
 export interface Condition {
   id: string
   field: string

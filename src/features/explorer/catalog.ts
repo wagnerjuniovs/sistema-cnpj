@@ -50,10 +50,10 @@ export const fields: Field[] = [
   f('socios.qualificacao_representante_legal', 'Qualificação do representante', 'Sócios', 'choice', qualifications),
 ]
 export const fieldById = Object.fromEntries(fields.map(field => [field.id, field]))
-export const operatorLabels: Record<Operator, string> = { in: 'É um de', not_in: 'Não é nenhum de', contains: 'Contém', starts_with: 'Começa com', eq: 'É igual a', between: 'Está entre', gte: 'Maior ou igual a', lte: 'Menor ou igual a', present: 'Está preenchido', missing: 'Não informado', all: 'Contém todos' }
+export const operatorLabels: Record<Operator, string> = { in: 'É um de', not_in: 'Não é nenhum de', contains: 'Contém', starts_with: 'Começa com', eq: 'É igual a', between: 'Está entre', gte: 'Maior ou igual a', lte: 'Menor ou igual a', gt: 'Maior que', lt: 'Menor que', present: 'Está preenchido', missing: 'Não informado', all: 'Contém todos' }
 export function operatorsFor(field: Field): Operator[] {
   if (officialOperators.has(field.id)) return officialOperators.get(field.id)!
-  if (field.type === 'number' || field.type === 'date') return ['between', 'gte', 'lte', 'eq', 'present', 'missing']
+  if (field.type === 'number' || field.type === 'date') return ['between', 'gte', 'lte', 'gt', 'lt', 'eq', 'present', 'missing']
   if (field.type === 'cnae') return ['in','all','not_in','present','missing']
   if (field.type === 'choice') return ['in','not_in','present','missing']
   return ['contains','eq','starts_with','in','not_in','present','missing']

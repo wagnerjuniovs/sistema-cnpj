@@ -15,7 +15,7 @@ export function FilterEditor({ advanced, target, groups, onSave, onClose }: {
 }) {
   const [field, setField] = useState<Field | undefined>(target.condition ? fieldById[target.condition.field] : undefined)
   const [conditionId, setConditionId] = useState(target.condition?.id)
-  const [extra, setExtra] = useState(advanced || !!target.condition && (!['in','contains','eq','gte','lte','between'].includes(target.condition.operator) || target.condition.cnaeScope !== undefined && target.condition.cnaeScope !== 'qualquer'))
+  const [extra, setExtra] = useState(advanced || !!target.condition && (!['in','contains','eq','gte','lte','gt','lt','between'].includes(target.condition.operator) || target.condition.cnaeScope !== undefined && target.condition.cnaeScope !== 'qualquer'))
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('Todos')
   const [operator, setOperator] = useState<Operator>(target.condition?.operator ?? 'contains')
@@ -37,7 +37,7 @@ export function FilterEditor({ advanced, target, groups, onSave, onClose }: {
 
   function selectField(next: Field) {
     const previous = !advanced ? groups.flatMap(g => g.conditions).find(c => c.field === next.id) : undefined
-    setExtra(advanced || !!previous && !['in','contains','eq','gte','lte','between'].includes(previous.operator));
+    setExtra(advanced || !!previous && !['in','contains','eq','gte','lte','gt','lt','between'].includes(previous.operator));
     setAge(previous?.minAgeYears?.toString() ?? ''); setAgeMode(!previous || previous.minAgeYears !== undefined);
     setConditionId(previous?.id); setField(next); setOperator(previous?.operator ?? (next.type === 'number' ? 'gte' : next.type === 'choice' || next.type === 'cnae' ? 'in' : operatorsFor(next)[0])); setValues(previous?.values ?? []); setScope(previous?.cnaeScope ?? 'qualquer'); setError(''); setOptionQuery('')
     if (previous) setGroupId(groups.find(g => g.conditions.some(c => c.id === previous.id))!.id)
