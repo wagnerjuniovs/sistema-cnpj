@@ -22,6 +22,7 @@ export function Explorer({ active = true }: { active?: boolean }) {
   const simpleCompatible = logicCompatible(groups)
   const [logic, setLogic] = useState<'and' | 'or'>('and')
   const [editor, setEditor] = useState<EditorTarget | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
   const [detail, setDetail] = useState<Summary | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [attempt, setAttempt] = useState(0)
@@ -64,7 +65,7 @@ export function Explorer({ active = true }: { active?: boolean }) {
   useEffect(() => {
     // Release the single-query API gate for pagination, catalogs and details.
     // Resume the same count once the user returns to the completed results.
-    if (!active || !submitted || pending || error || !result || editor || detail || countCache.current?.key === countKey) return
+    if (!active || !submitted || pending || error || !result || editor || detail || exportOpen || countCache.current?.key === countKey) return
     const controller = new AbortController()
     setCountResult({ key: countKey, total: null, status: 'loading' })
     const counting = page === 0 && !result.page.has_more ? Promise.resolve(String(result.rows.length)) : countCompanies(request, controller.signal)
@@ -75,7 +76,7 @@ export function Explorer({ active = true }: { active?: boolean }) {
       if (!controller.signal.aborted) setCountResult({ key: countKey, total: null, status: 'error' })
     })
     return () => controller.abort()
-  }, [active, submitted, pending, error, result, editor, detail, countKey, request, page])
+  }, [active, submitted, pending, error, result, editor, detail, exportOpen, countKey, request, page])
   function invalidate() { setSubmitted(false); setPage(0); setCursors([null]); setResult(null); setRows([]); setError(''); setLoading(false) }
   function submit() { setGroups(previous => refreshAgeLimits(previous)); setLoading(true); setError(''); setAppliedSearch(search); setPage(0); setCursors([null]); setSubmitted(true); setAttempt(value => value + 1) }
   function navigate(next: number) {
@@ -110,7 +111,7 @@ export function Explorer({ active = true }: { active?: boolean }) {
       {advanced && groups.length > 0 && <Button variant="ghost" onClick={() => setEditor({})}><Plus size={13} />Novo grupo</Button>}
     </div>
     <FilterGroups advanced={advanced} groups={groups} logic={logic} onChange={updateGroups} onLogic={next => { setLogic(next); invalidate() }} onEdit={(condition, groupId) => setEditor({ condition, groupId })} onAdd={groupId => setEditor({ groupId })} />
-    <ResultsTable rows={rows} total={countResult.key === countKey ? countResult.total : null} countStatus={countResult.key === countKey ? countResult.status : 'loading'} loading={pending && !error} error={error} initial={!submitted} hasMore={result?.page.has_more ?? false} competencia={result?.competencia} warnings={result?.meta.warnings ?? []} sorting={sorting} onSorting={next => { setSorting(next); setPage(0); setCursors([null]); }} page={page} pageSize={pageSize} onPage={navigate} onPageSize={size => { setPageSize(size); setPage(0); setCursors([null]); }} onOpen={setDetail} onReset={reset} onRetry={submit} selectedCnpjs={selectedCnpjs} onSelection={ids => setSelection({ key: selectionKey, ids })} />
+    <ResultsTable exportContext={{ query: request, cursor: cursors[page] ?? null, selectedCnpjs, pageCount: rows.length, total: countResult.key === countKey ? countResult.total : null }} onExportOpen={setExportOpen} rows={rows} total={countResult.key === countKey ? countResult.total : null} countStatus={countResult.key === countKey ? countResult.status : 'loading'} loading={pending && !error} error={error} initial={!submitted} hasMore={result?.page.has_more ?? false} competencia={result?.competencia} warnings={result?.meta.warnings ?? []} sorting={sorting} onSorting={next => { setSorting(next); setPage(0); setCursors([null]); }} page={page} pageSize={pageSize} onPage={navigate} onPageSize={size => { setPageSize(size); setPage(0); setCursors([null]); }} onOpen={setDetail} onReset={reset} onRetry={submit} selectedCnpjs={selectedCnpjs} onSelection={ids => setSelection({ key: selectionKey, ids })} />
     {editor && <FilterEditor advanced={advanced} target={editor} groups={groups} onSave={saveCondition} onClose={() => setEditor(null)} />}
     {detail && <Details row={detail} onClose={() => setDetail(null)} />}
   </div>

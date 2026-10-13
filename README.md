@@ -15,3 +15,9 @@ A configuração foi validada no computador de desenvolvimento. Outro computador
 Node.js 24, npm ci, npm run dev. Use VITE_API_URL no .env.local privado. Variáveis VITE_ são públicas: nunca inclua senhas.
 
 O workflow publica somente dist na branch main. VITE_API_URL é uma variável do repositório, atualmente http://127.0.0.1:3333. O build Pages ignora arquivos .env locais e usa /sistema-cnpj/. Execute npm run build:pages e npm test para validar. O endereço loopback acima é autorizado explicitamente; demais endereços loopback, credenciais e mocks são rejeitados na auditoria.
+
+## Copiar e exportar
+
+Consultar CNPJ e o detalhe do explorador oferecem Copiar todos os dados, incluindo todas as páginas de sócios. Exportar permite todos os resultados filtrados, selecionados ou página atual, em CSV, Excel e JSONL, com cadastro resumido ou completo. O tamanho da página não limita Todos os resultados.
+
+A API local prepara o arquivo incrementalmente no disco interno, mostra quantidade escrita e entrega download apenas após concluir. Arquivos ficam disponíveis por 24 horas, com manifesto de filtros, total e checksum. Excel abre novas abas ao atingir o limite de linhas. A configuração inicial do SSD instala o componente Excel no disco interno; os dados continuam no SSD. Não há upload dos arquivos exportados ao GitHub.

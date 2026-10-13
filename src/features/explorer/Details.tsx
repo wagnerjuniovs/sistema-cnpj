@@ -10,6 +10,7 @@ import type { Summary, CompanyDetail } from '@/services/cnpj'
 import { Partners } from './Partners'
 import { companyAge } from './dates'
 import { cnaeLabel } from '@/lib/cnae'
+import { CopyCompany } from './CopyCompany'
 
 export function displayValue(field: string, value: Scalar | undefined, description?: Scalar) {
   if (value == null || value.trim() === '') return 'Não informado'
@@ -34,12 +35,13 @@ export function EstablishmentDetails({ row, layout = 'sheet' }: { row: CompanyDe
   return <div className={layout === 'page' ? 'detail-page' : 'detail-scroll'}>
     <div className="detail-identity"><span className="mono">{cnpjFormat(row.cnpj)}</span><Button variant="ghost" onClick={copy} aria-label="Copiar CNPJ sem formatação">{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? 'Copiado' : 'Copiar'}</Button><span className="muted">Base {row.competencia}</span><span className="copy-feedback sr-only" role="status">{copied ? 'CNPJ copiado sem formatação' : ''}</span></div>
     {copyError && <p className="form-error" role="alert">Não foi possível copiar. Selecione o CNPJ acima.</p>}
+    <CopyCompany key={row.cnpj} row={row} />
     <div className="detail-sections">
       {['Identificação','Situação cadastral','Localização','Perfil da empresa','Contatos','Simples/MEI'].map(category => <section className="detail-section" key={category}>
         <h2>{category}</h2>
         {category === 'Perfil da empresa' && <p>Capital social não é faturamento.</p>}
         {category === 'Contatos' && <p>Sem validação ou confirmação de WhatsApp.</p>}
-        <dl>{fields.filter(field => field.category === category && field.id !== 'cnpj_completo').map(field => <div key={field.id}><dt>{field.label}</dt><Value field={field.id} value={readValue(row, field.id)} description={row.descricoes?.[field.id] as Scalar} /></div>)}</dl>
+        <dl>{fields.filter(field => field.category === category && field.id !== 'cnpj_completo').map(field => <div key={field.id}><dt>{field.id === 'estabelecimentos.data_inicio_atividade' ? 'Data de abertura' : field.label}</dt><Value field={field.id} value={readValue(row, field.id)} description={row.descricoes?.[field.id] as Scalar} /></div>)}</dl>
         {category === 'Situação cadastral' && <dl><div><dt>Idade na data da consulta</dt><dd>{companyAge(row.estabelecimento.data_inicio_atividade)}</dd></div></dl>}
       </section>)}
       <section className="detail-section"><h2>Atividade</h2><dl><div><dt>CNAE principal</dt><Value field="cnae" value={row.estabelecimento.cnae_fiscal_principal} description={row.descricoes?.['estabelecimentos.cnae_fiscal_principal'] as Scalar} /></div><div><dt>CNAEs secundários</dt><dd>{row.secundarios.length ? row.secundarios.map(code => <div key={code}>{displayValue('cnae', code, typeof row.descricoes?.cnaes === 'object' ? row.descricoes.cnaes?.[code] : null)}</div>) : <span className="value-missing">Não informado</span>}</dd></div></dl></section>

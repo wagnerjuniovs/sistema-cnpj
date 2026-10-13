@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { optionLabel, supportedSorts } from './catalog'
 import { cnaeLabel } from '@/lib/cnae'
 import { cnpjFormat, dateFormat, moneyFormat } from './model'
+import { RealExport } from '@/features/export/RealExport'
+import type { ExportContext } from '@/services/exports'
 import type { Summary } from '@/services/cnpj'
 
 const columnNames: Record<string, string> = { cnpj_completo: 'CNPJ', 'empresas.razao_social': 'Empresa', 'estabelecimentos.situacao_cadastral': 'Situação', 'estabelecimentos.municipio': 'Município / UF', 'estabelecimentos.cnae_fiscal_principal': 'CNAE principal', 'estabelecimentos.telefone_1': 'Telefone', 'estabelecimentos.correio_eletronico': 'E-mail', 'empresas.capital_social': 'Capital social', 'empresas.porte_empresa': 'Porte', 'estabelecimentos.data_inicio_atividade': 'Abertura', 'simples.opcao_simples': 'Simples', 'simples.opcao_mei': 'MEI' }
@@ -19,7 +21,8 @@ function SelectionCheckbox({ checked, partial, disabled, label, onChange }: { ch
   useEffect(() => { if (ref.current) ref.current.indeterminate = !!partial }, [partial])
   return <input ref={ref} type="checkbox" aria-label={label} aria-checked={partial ? 'mixed' : checked} checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)} />
 }
-export function ResultsTable({ rows, total, countStatus, loading, initial, hasMore, competencia, warnings, error, sorting, onSorting, page, pageSize, onPage, onPageSize, onOpen, onReset, onRetry, selectedCnpjs, onSelection }: {
+export function ResultsTable({ rows, total, countStatus, loading, initial, hasMore, competencia, warnings, error, sorting, onSorting, page, pageSize, onPage, onPageSize, onOpen, onReset, onRetry, selectedCnpjs, onSelection, exportContext, onExportOpen }: {
+  exportContext: ExportContext; onExportOpen: (open: boolean) => void
   countStatus: 'loading' | 'exact' | 'error'
   rows: Summary[]; total: string | null; loading: boolean; initial: boolean; hasMore: boolean; competencia?: string; warnings: string[]; error: string; sorting: SortingState; onSorting: (sort: SortingState) => void; page: number; pageSize: number; onPage: (page: number) => void; onPageSize: (size: number) => void; onOpen: (row: Summary) => void; onReset: () => void; onRetry: () => void
   selectedCnpjs: string[]; onSelection: (ids: string[]) => void
@@ -63,7 +66,7 @@ export function ResultsTable({ rows, total, countStatus, loading, initial, hasMo
     <div className="results-toolbar"><span aria-live="polite">{initial ? 'Defina os filtros e clique em Buscar' : <>{total !== null ? <strong>{BigInt(total).toLocaleString('pt-BR')} {total === '1' ? 'empresa encontrada' : 'empresas encontradas'}</strong> : <strong>{countStatus === 'error' ? 'Total indisponível' : 'Calculando total…'}</strong>}<span className="muted"> · {busy ? 'Carregando página…' : failed ? 'Consulta não concluída' : `${rows.length} nesta página`}{competencia ? ` · Base ${competencia}` : ''}</span></>}</span>
       {selectedCnpjs.length > 0 && <div className="selection-summary"><span>{selectedCnpjs.length} selecionados</span><Button variant="ghost" onClick={() => onSelection([])}>Limpar seleção</Button></div>}
       <div className="results-actions">
-      <Popover.Root><Popover.Trigger asChild><Button>Exportar</Button></Popover.Trigger><Popover.Portal><Popover.Content className="column-popover" sideOffset={6} align="end"><p>Exportação será habilitada na Etapa 7.</p><Popover.Arrow className="popover-arrow" /></Popover.Content></Popover.Portal></Popover.Root>
+      <RealExport context={exportContext} disabled={busy || failed || initial || !rows.length} onOpenChange={onExportOpen} />
       <Popover.Root><Popover.Trigger asChild><Button><Columns3 size={14} />Colunas</Button></Popover.Trigger><Popover.Portal><Popover.Content className="column-popover" sideOffset={6} align="end"><h2>Colunas visíveis</h2>{table.getAllLeafColumns().map(column => <label key={column.id}><input type="checkbox" checked={column.getIsVisible()} disabled={!column.getCanHide()} onChange={column.getToggleVisibilityHandler()} />{columnNames[column.id]}</label>)}<fieldset className="density-options"><legend>Densidade</legend><label><input type="radio" name="density" checked={density === 'compact'} onChange={() => changeDensity('compact')} />Compacta</label><label><input type="radio" name="density" checked={density === 'comfortable'} onChange={() => changeDensity('comfortable')} />Confortável</label></fieldset><Button variant="ghost" onClick={() => { table.setColumnVisibility(defaults); changeDensity('compact') }}>Restaurar padrão</Button><Popover.Arrow className="popover-arrow" /></Popover.Content></Popover.Portal></Popover.Root>
       </div>
     </div>

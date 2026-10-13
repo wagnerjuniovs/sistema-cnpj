@@ -189,6 +189,9 @@ tbody tr:hover { background: var(--background); }
 .detail-sheet .dialog-heading { flex-shrink: 0; }
 .detail-scroll { overflow: auto; padding: 0 16px 24px; }
 .detail-identity { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 0 4px; }
+.copy-company { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; font-size: 12px; }
+.copy-company textarea { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; color: var(--foreground); background: var(--background); }
+.copy-company .form-error { flex-basis: 100%; }
 .detail-disclaimer { font-size: 11px; color: var(--muted-foreground); margin: 0 0 16px; }
 .detail-section { border-top: 1px solid var(--border); padding-block: 16px; }
 .detail-section h2 { font-size: 12px; font-weight: 600; margin: 0 0 12px; }
